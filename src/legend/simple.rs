@@ -12,7 +12,7 @@ use crate::legend::{
 /// Default legend renderer (Spek-style).
 ///
 /// Produces:
-/// - File / metadata header (top)
+/// - Optional file / metadata header (top)
 /// - Time axis (bottom)
 /// - Frequency axis (left)
 /// - dBFS scale (right)
@@ -43,25 +43,17 @@ impl LegendRenderer for SimpleLegendRenderer {
         let bottom = image_height - margins.bottom;
 
         // -----------------------------------------------------------------
-        // Header (top metadata)
+        // Header (top metadata) – OPTIONAL
         // -----------------------------------------------------------------
 
         let header_y = top.saturating_sub(settings.font_size + 8);
 
-        let file_name = context
-            .file_name
-            .as_deref()
-            .unwrap_or("Unknown file");
+        // File name (left) – only if provided
+        if let Some(file_name) = &context.file_name {
+            cmds.push(text(left, header_y, file_name));
+        }
 
-        let app_version = context
-            .app_version
-            .as_deref()
-            .unwrap_or("");
-
-        // File name (left)
-        cmds.push(text(left, header_y, file_name));
-
-        // Audio info (center)
+        // Audio info (center) – ALWAYS present
         let channel_str = match context.audio.channels {
             1 => "Mono".to_string(),
             2 => "Stereo".to_string(),
@@ -87,8 +79,8 @@ impl LegendRenderer for SimpleLegendRenderer {
             &audio_info,
         ));
 
-        // App version (right)
-        if !app_version.is_empty() {
+        // App version (right) – only if provided
+        if let Some(app_version) = &context.app_version {
             cmds.push(text(
                 right.saturating_sub(140),
                 header_y,

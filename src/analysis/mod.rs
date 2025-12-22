@@ -3,6 +3,8 @@
 //! This module defines the data model for numerical
 //! spectrograms. It contains NO DSP logic and NO rendering.
 
+pub mod fft;
+
 /// Scaling applied to intensity values.
 #[derive(Debug, Copy, Clone)]
 pub enum IntensityScale {

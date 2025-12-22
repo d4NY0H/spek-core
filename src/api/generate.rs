@@ -7,7 +7,7 @@
 //!
 //! No UI logic, no platform-specific code.
 
-use crate::api::result::{SpectrogramResult, ImageBuffer as ApiImageBuffer};
+use crate::api::result::SpectrogramResult;
 use crate::api::settings::SpekSettings;
 
 use crate::analysis::{Analyzer, AnalysisSettings, IntensityScale, WindowFunction};
@@ -99,7 +99,7 @@ pub fn generate_spectrogram(
     // 6. Assemble result (API-level ImageBuffer)
     // ---------------------------------------------------------------------
     Ok(SpectrogramResult {
-        image: ApiImageBuffer {
+        image: crate::api::result::ImageBuffer {
             width: image.width as u32,
             height: image.height as u32,
             data: image.data,

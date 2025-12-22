@@ -132,5 +132,3 @@ These documents define the project completely.
 
 (To be defined)
 
----
-

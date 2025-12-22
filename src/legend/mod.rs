@@ -37,6 +37,10 @@ pub struct LegendSettings {
 }
 
 /// Context required to generate a legend.
+///
+/// This struct contains ALL semantic information
+/// required to describe the legend contents.
+/// It is backend-agnostic and rendering-independent.
 #[derive(Debug, Clone)]
 pub struct LegendContext {
     /// Audio metadata
@@ -50,6 +54,17 @@ pub struct LegendContext {
 
     /// Maximum dBFS (usually 0.0)
     pub max_db: f32,
+
+    /// Display name of the input audio file
+    ///
+    /// This is purely informational and may be truncated
+    /// by the legend renderer.
+    pub file_name: Option<String>,
+
+    /// Application / core version string
+    ///
+    /// Example: "spek-core 0.1.0"
+    pub app_version: Option<String>,
 }
 
 /// Output commands produced by the legend system.

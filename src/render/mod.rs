@@ -4,7 +4,6 @@
 //! This module does NOT handle legends, text, fonts, or metadata overlays.
 
 use crate::analysis::SpectrogramSet;
-use crate::color::{ColorMapper, Rgba};
 
 /// Orientation of the spectrogram.
 #[derive(Debug, Copy, Clone)]
@@ -49,7 +48,7 @@ pub struct RenderSettings {
 ///
 /// Layout:
 /// data.len() == width * height * 4
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ImageBuffer {
     pub width: usize,
     pub height: usize,
@@ -60,26 +59,12 @@ pub struct ImageBuffer {
 ///
 /// Converts numerical spectrogram data into a raw pixel buffer.
 ///
-/// Responsibilities:
-/// - map spectrogram bins to pixel positions
-/// - apply color mapping via ColorMapper
-///
-/// Explicitly NOT responsible for:
-/// - legends
-/// - text
-/// - fonts
-/// - metadata
-///
-/// The renderer:
-/// - is deterministic
-/// - is single-shot
-/// - has no hidden defaults
+/// Color mapping is handled internally by the renderer implementation.
 pub trait Renderer {
     fn render(
         &self,
         spectrograms: &SpectrogramSet,
         settings: &RenderSettings,
-        colors: &dyn ColorMapper,
     ) -> Result<ImageBuffer, RenderError>;
 }
 
@@ -99,7 +84,10 @@ pub fn put_pixel(
     image: &mut ImageBuffer,
     x: usize,
     y: usize,
-    color: Rgba,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
 ) {
     if x >= image.width || y >= image.height {
         return;
@@ -107,9 +95,9 @@ pub fn put_pixel(
 
     let idx = (y * image.width + x) * 4;
     if idx + 3 < image.data.len() {
-        image.data[idx] = color.r;
-        image.data[idx + 1] = color.g;
-        image.data[idx + 2] = color.b;
-        image.data[idx + 3] = color.a;
+        image.data[idx] = r;
+        image.data[idx + 1] = g;
+        image.data[idx + 2] = b;
+        image.data[idx + 3] = a;
     }
 }

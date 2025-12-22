@@ -4,6 +4,7 @@
 //! This module does NOT handle legends, text, fonts, or metadata overlays.
 
 use crate::analysis::SpectrogramSet;
+use crate::color::{ColorMapper, Rgba};
 
 /// Orientation of the spectrogram.
 #[derive(Debug, Copy, Clone)]
@@ -58,17 +59,27 @@ pub struct ImageBuffer {
 /// Renderer interface.
 ///
 /// Converts numerical spectrogram data into a raw pixel buffer.
-/// Color mapping is performed externally via the color module.
+///
+/// Responsibilities:
+/// - map spectrogram bins to pixel positions
+/// - apply color mapping via ColorMapper
+///
+/// Explicitly NOT responsible for:
+/// - legends
+/// - text
+/// - fonts
+/// - metadata
 ///
 /// The renderer:
 /// - is deterministic
-/// - performs no allocations beyond the output buffer
-/// - has no knowledge of legends or text
+/// - is single-shot
+/// - has no hidden defaults
 pub trait Renderer {
     fn render(
         &self,
         spectrograms: &SpectrogramSet,
         settings: &RenderSettings,
+        colors: &dyn ColorMapper,
     ) -> Result<ImageBuffer, RenderError>;
 }
 
@@ -80,4 +91,25 @@ pub enum RenderError {
 
     /// Internal rendering failure
     Failed,
+}
+
+/// Helper: write a single RGBA pixel into the buffer.
+#[inline]
+pub fn put_pixel(
+    image: &mut ImageBuffer,
+    x: usize,
+    y: usize,
+    color: Rgba,
+) {
+    if x >= image.width || y >= image.height {
+        return;
+    }
+
+    let idx = (y * image.width + x) * 4;
+    if idx + 3 < image.data.len() {
+        image.data[idx] = color.r;
+        image.data[idx + 1] = color.g;
+        image.data[idx + 2] = color.b;
+        image.data[idx + 3] = color.a;
+    }
 }

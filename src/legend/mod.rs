@@ -7,7 +7,6 @@ use crate::audio::AudioMetadata;
 
 pub mod overlay;
 pub mod simple;
-pub mod overlay;
 
 /// Legend layout margins (in pixels).
 #[derive(Debug, Copy, Clone)]

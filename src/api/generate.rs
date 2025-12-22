@@ -99,11 +99,8 @@ pub fn generate_spectrogram(
         &legend_commands,
     );
 
-    // NOTE:
-    // Applying legend commands to the pixel buffer
-    // will be implemented in the legend module.
-    //
-    // For now, the wiring ends here.
+    // Legend commands are applied via the overlay executor.
+    // Font rasterization is injected later.
 
     // ---------------------------------------------------------------------
     // 6. Assemble result

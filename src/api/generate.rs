@@ -13,7 +13,7 @@ use crate::api::settings::SpekSettings;
 use crate::analysis::{Analyzer, AnalysisSettings, IntensityScale, WindowFunction};
 use crate::audio::AudioSource;
 use crate::render::{RenderSettings as CoreRenderSettings, Renderer};
-use crate::legend::LegendRenderer;
+use crate::legend::{LegendRenderer, LegendContext, LegendSettings, LegendMargins};
 
 /// Generate a spectrogram image including legend.
 ///
@@ -70,24 +70,31 @@ pub fn generate_spectrogram(
     // ---------------------------------------------------------------------
     // 5. Render legend overlay
     // ---------------------------------------------------------------------
+    let legend_context = LegendContext {
+        audio: audio.meta.clone(),
+        duration_sec: duration_seconds,
+        min_db: settings.spectrogram.min_db,
+        max_db: settings.spectrogram.max_db,
+
+        // Spek-style: optional, informational only
+        file_name: None,
+
+        // Deterministic core version
+        app_version: Some(format!(
+            "spek-core {}",
+            env!("CARGO_PKG_VERSION")
+        )),
+    };
+
     let legend_commands = legend.generate(
-        &crate::legend::LegendSettings {
+        &LegendSettings {
             font_size: 14,
             freq_ticks: 10,
             time_ticks: 10,
             db_ticks: 6,
         },
-        &crate::legend::LegendContext {
-            audio: audio.meta.clone(),
-            duration_sec: duration_seconds,
-            min_db: settings.spectrogram.min_db,
-            max_db: settings.spectrogram.max_db,
-
-            // NEW: optional semantic metadata
-            file_name: None,
-            app_version: Some("spek-core 0.1.0".to_string()),
-        },
-        crate::legend::LegendMargins {
+        &legend_context,
+        LegendMargins {
             left: 80,
             right: 100,
             top: 60,

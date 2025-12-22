@@ -2,10 +2,10 @@
 //!
 //! Converts numerical spectrogram data into an RGBA image buffer.
 //! This renderer has NO knowledge of legends, fonts, or text.
-//! Color mapping is injected via a ColorMapper.
+//! Color mapping is owned by the renderer instance.
 
 use crate::analysis::SpectrogramSet;
-use crate::color::{ColorMapper, Rgba};
+use crate::color::ColorMapper;
 use crate::render::{
     ChannelLayout, ImageBuffer, Orientation, RenderError, RenderSettings, Renderer,
 };
@@ -49,19 +49,30 @@ impl<'a> Renderer for BasicRenderer<'a> {
                         let (t, f) = match settings.orientation {
                             Orientation::Vertical => {
                                 let t = x * time_bins / settings.width;
-                                let f = (settings.height - 1 - y) * freq_bins / settings.height;
+                                let f =
+                                    (settings.height - 1 - y) * freq_bins / settings.height;
                                 (t, f)
                             }
                             Orientation::Horizontal => {
                                 let t = y * time_bins / settings.height;
-                                let f = (settings.width - 1 - x) * freq_bins / settings.width;
+                                let f =
+                                    (settings.width - 1 - x) * freq_bins / settings.width;
                                 (t, f)
                             }
                         };
-                        (t, f, None)
+
+                        (
+                            t.min(time_bins.saturating_sub(1)),
+                            f.min(freq_bins.saturating_sub(1)),
+                            None,
+                        )
                     }
 
                     ChannelLayout::Split => {
+                        if settings.height < channel_count {
+                            return Err(RenderError::InvalidDimensions);
+                        }
+
                         let ch_height = settings.height / channel_count;
                         let ch = (y / ch_height).min(channel_count - 1);
                         let local_y = y % ch_height;
@@ -69,7 +80,11 @@ impl<'a> Renderer for BasicRenderer<'a> {
                         let t = x * time_bins / settings.width;
                         let f = (ch_height - 1 - local_y) * freq_bins / ch_height;
 
-                        (t, f, Some(ch))
+                        (
+                            t.min(time_bins.saturating_sub(1)),
+                            f.min(freq_bins.saturating_sub(1)),
+                            Some(ch),
+                        )
                     }
                 };
 
@@ -84,13 +99,13 @@ impl<'a> Renderer for BasicRenderer<'a> {
                     Some(ch) => spectrograms.channels[ch].data[freq_idx][time_idx],
                 };
 
-                let Rgba { r, g, b, a } = self.color_mapper.map(intensity);
+                let color = self.color_mapper.map(intensity);
                 let idx = (y * settings.width + x) * 4;
 
-                buffer[idx] = r;
-                buffer[idx + 1] = g;
-                buffer[idx + 2] = b;
-                buffer[idx + 3] = a;
+                buffer[idx] = color.r;
+                buffer[idx + 1] = color.g;
+                buffer[idx + 2] = color.b;
+                buffer[idx + 3] = color.a;
             }
         }
 

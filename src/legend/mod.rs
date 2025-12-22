@@ -1,6 +1,8 @@
 //! Legend rendering for spek-core.
 //!
-//! This module generates axis labels, scales, and metadata overlays.
+//! This module defines the semantic model for spectrogram legends.
+//! It generates axis labels, scales, and metadata overlays.
+//!
 //! The legend is ALWAYS rendered and never optional.
 
 use crate::audio::AudioMetadata;
@@ -19,11 +21,12 @@ pub struct LegendMargins {
 
 /// Legend configuration.
 ///
+/// Controls visual density and tick layout.
 /// All fields are mandatory.
 /// There is NO disable flag by design.
 #[derive(Debug, Clone)]
 pub struct LegendSettings {
-    /// Font size in pixels
+    /// Font size in pixels (logical size, renderer-defined)
     pub font_size: u32,
 
     /// Number of frequency ticks
@@ -39,31 +42,46 @@ pub struct LegendSettings {
 /// Context required to generate a legend.
 ///
 /// This struct contains ALL semantic information
-/// required to describe the legend contents.
-/// It is backend-agnostic and rendering-independent.
+/// required to describe legend contents.
+///
+/// It is:
+/// - backend-agnostic
+/// - rendering-independent
+/// - deterministic
+///
+/// Population of this struct is the responsibility of the API layer,
+/// NOT the legend renderer itself.
 #[derive(Debug, Clone)]
 pub struct LegendContext {
-    /// Audio metadata
+    /// Audio metadata (sample rate, channels, bit depth)
     pub audio: AudioMetadata,
 
-    /// Duration in seconds
+    /// Total duration in seconds
     pub duration_sec: f64,
 
-    /// Minimum dBFS (e.g. -120.0)
+    /// Minimum dBFS shown (e.g. -120.0)
     pub min_db: f32,
 
-    /// Maximum dBFS (usually 0.0)
+    /// Maximum dBFS shown (usually 0.0)
     pub max_db: f32,
 
-    /// Display name of the input audio file
+    /// Display name of the input audio file.
     ///
-    /// This is purely informational and may be truncated
-    /// by the legend renderer.
+    /// This value is optional and purely informational.
+    /// It may be truncated or omitted by the legend renderer.
+    ///
+    /// Typical source:
+    /// - CLI argument
+    /// - UI layer
     pub file_name: Option<String>,
 
-    /// Application / core version string
+    /// Application / core version string.
     ///
-    /// Example: "spek-core 0.1.0"
+    /// Example:
+    /// - "spek-core 0.1.0"
+    ///
+    /// This is NOT generated automatically.
+    /// The caller decides whether to expose version info.
     pub app_version: Option<String>,
 }
 
@@ -88,8 +106,15 @@ pub enum LegendCommand {
 
 /// Legend renderer interface.
 ///
-/// Produces a sequence of draw commands describing
-/// axes, ticks, labels, and metadata.
+/// Produces a sequence of draw commands describing:
+/// - axes
+/// - ticks
+/// - labels
+/// - metadata
+///
+/// The renderer:
+/// - MUST NOT modify context
+/// - MUST NOT access audio or render state directly
 pub trait LegendRenderer {
     fn generate(
         &self,

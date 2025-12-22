@@ -7,13 +7,14 @@
 //!
 //! No UI logic, no platform-specific code.
 
-use crate::api::result::SpectrogramResult;
+use crate::api::result::{SpectrogramResult, ImageBuffer as ApiImageBuffer};
 use crate::api::settings::SpekSettings;
 
 use crate::analysis::{Analyzer, AnalysisSettings, IntensityScale, WindowFunction};
 use crate::audio::AudioSource;
-use crate::render::{RenderSettings as CoreRenderSettings, Renderer, ImageBuffer};
-use crate::legend::{LegendRenderer};
+use crate::render::{RenderSettings as CoreRenderSettings, Renderer};
+use crate::legend::LegendRenderer;
+use crate::color::ColorMapper;
 
 /// Generate a spectrogram image including legend.
 ///
@@ -24,6 +25,7 @@ pub fn generate_spectrogram(
     source: &dyn AudioSource,
     analyzer: &dyn Analyzer,
     renderer: &dyn Renderer,
+    color_mapper: &dyn ColorMapper,
     legend: &dyn LegendRenderer,
     settings: &SpekSettings,
 ) -> Result<SpectrogramResult, GenerateError> {
@@ -57,14 +59,14 @@ pub fn generate_spectrogram(
     // 4. Render spectrogram image (without legend)
     // ---------------------------------------------------------------------
     let render_settings = CoreRenderSettings {
-        width: settings.render.width as usize,
-        height: settings.render.height as usize,
+        width: settings.render.width,
+        height: settings.render.height,
         orientation: crate::render::Orientation::Vertical,
         channels: crate::render::ChannelLayout::Combined,
     };
 
     let mut image = renderer
-        .render(&spectrograms, &render_settings)
+        .render(&spectrograms, &render_settings, color_mapper)
         .map_err(|_| GenerateError::RenderFailed)?;
 
     // ---------------------------------------------------------------------
@@ -96,10 +98,10 @@ pub fn generate_spectrogram(
     crate::legend::overlay::apply_legend_overlay(&mut image, &legend_commands);
 
     // ---------------------------------------------------------------------
-    // 6. Assemble result
+    // 6. Assemble result (API-level ImageBuffer)
     // ---------------------------------------------------------------------
     Ok(SpectrogramResult {
-        image: ImageBuffer {
+        image: ApiImageBuffer {
             width: image.width as u32,
             height: image.height as u32,
             data: image.data,

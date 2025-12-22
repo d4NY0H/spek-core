@@ -28,7 +28,7 @@ impl FftAnalyzer {
 impl Analyzer for FftAnalyzer {
     fn analyze(
         &self,
-        audio: &AudioBuffer<'_>,
+        audio: &AudioBuffer,
         settings: &AnalysisSettings,
     ) -> Result<SpectrogramSet, AnalysisError> {
         let channels = audio.meta.channels as usize;

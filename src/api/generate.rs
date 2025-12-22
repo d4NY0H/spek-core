@@ -10,9 +10,9 @@
 use crate::api::result::{ImageBuffer, SpectrogramResult};
 use crate::api::settings::SpekSettings;
 use crate::analysis::{Analyzer, AnalysisSettings, IntensityScale, WindowFunction};
-use crate::audio::{AudioSource};
+use crate::audio::AudioSource;
 use crate::render::{RenderSettings as CoreRenderSettings, Renderer};
-use crate::legend::{LegendRenderer};
+use crate::legend::LegendRenderer;
 
 /// Generate a spectrogram image including legend.
 ///
@@ -71,7 +71,6 @@ pub fn generate_spectrogram(
     // ---------------------------------------------------------------------
     let legend_commands = legend.generate(
         &crate::legend::LegendSettings {
-            enabled: true,
             font_size: 14,
             freq_ticks: 10,
             time_ticks: 10,
@@ -98,9 +97,6 @@ pub fn generate_spectrogram(
         &mut image,
         &legend_commands,
     );
-
-    // Legend commands are applied via the overlay executor.
-    // Font rasterization is injected later.
 
     // ---------------------------------------------------------------------
     // 6. Assemble result

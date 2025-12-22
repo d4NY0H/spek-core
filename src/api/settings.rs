@@ -1,6 +1,11 @@
 //! Public configuration types for spek-core.
+//!
+//! These types define the complete, stable input contract
+//! for spectrogram generation.
+//!
+//! No UI-specific or platform-specific settings are allowed here.
 
-/// Spectrogram scaling mode.
+/// Intensity scaling mode applied after dBFS mapping.
 #[derive(Debug, Copy, Clone)]
 pub enum ScaleMode {
     Linear,
@@ -21,36 +26,44 @@ pub enum WindowFunction {
 /// Channel processing mode.
 #[derive(Debug, Copy, Clone)]
 pub enum ChannelMode {
+    /// All channels combined into a single spectrogram
     Combined,
+
+    /// One spectrogram per channel
     Split,
 }
 
-/// Spectrogram generation settings.
+/// Numerical spectrogram generation settings.
+///
+/// These parameters control the signal analysis stage.
 #[derive(Debug, Clone)]
 pub struct SpectrogramSettings {
-    /// FFT size (e.g. 1024, 2048)
+    /// FFT size (e.g. 1024, 2048, 4096)
     pub fft_size: usize,
 
-    /// Hop size (overlap control)
+    /// Hop size between FFT windows
     pub hop_size: usize,
 
     /// Window function
     pub window: WindowFunction,
 
-    /// Channel handling
+    /// Channel handling mode
     pub channels: ChannelMode,
 
-    /// Minimum dBFS (e.g. -120.0)
+    /// Minimum dBFS floor (e.g. -120.0)
     pub min_db: f32,
 
-    /// Maximum dBFS (usually 0.0)
+    /// Maximum dBFS ceiling (typically 0.0)
     pub max_db: f32,
 
-    /// Intensity scaling
+    /// Intensity scaling mode
     pub scale: ScaleMode,
 }
 
-/// Render output settings.
+/// Final output image configuration.
+///
+/// This controls the pixel dimensions of the rendered image.
+/// The legend is always included automatically.
 #[derive(Debug, Clone)]
 pub struct RenderSettings {
     /// Output image width in pixels
@@ -61,8 +74,13 @@ pub struct RenderSettings {
 }
 
 /// Complete spek-core configuration.
+///
+/// This is the single settings object accepted by the public API.
 #[derive(Debug, Clone)]
 pub struct SpekSettings {
+    /// Spectrogram analysis settings
     pub spectrogram: SpectrogramSettings,
+
+    /// Render output settings
     pub render: RenderSettings,
 }

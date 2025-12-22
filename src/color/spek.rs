@@ -49,9 +49,9 @@ impl ColorMapper for SpekColorMapper {
         };
 
         Rgba {
-            r: r as u8,
-            g: g as u8,
-            b: b as u8,
+            r: r.clamp(0.0, 255.0) as u8,
+            g: g.clamp(0.0, 255.0) as u8,
+            b: b.clamp(0.0, 255.0) as u8,
             a: 255,
         }
     }

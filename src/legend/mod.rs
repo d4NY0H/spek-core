@@ -1,9 +1,9 @@
 //! Legend rendering for spek-core.
 //!
 //! This module generates axis labels, scales, and metadata overlays.
-//! The legend is always rendered and never optional.
+//! The legend is ALWAYS rendered and never optional.
 
-use crate::audio::AudioInfo;
+use crate::audio::AudioMetadata;
 
 /// Legend layout margins (in pixels).
 #[derive(Debug, Copy, Clone)]
@@ -15,11 +15,11 @@ pub struct LegendMargins {
 }
 
 /// Legend configuration.
+///
+/// All fields are mandatory.
+/// There is NO disable flag by design.
 #[derive(Debug, Clone)]
 pub struct LegendSettings {
-    /// Enable legend rendering (always true in spek-core)
-    pub enabled: bool,
-
     /// Font size in pixels
     pub font_size: u32,
 
@@ -33,11 +33,11 @@ pub struct LegendSettings {
     pub db_ticks: usize,
 }
 
-/// Information required to draw a legend.
+/// Context required to generate a legend.
 #[derive(Debug, Clone)]
 pub struct LegendContext {
     /// Audio metadata
-    pub audio: AudioInfo,
+    pub audio: AudioMetadata,
 
     /// Duration in seconds
     pub duration_sec: f64,
@@ -50,6 +50,9 @@ pub struct LegendContext {
 }
 
 /// Output commands produced by the legend system.
+///
+/// These commands are backend-agnostic and can be
+/// rendered by any text / vector backend.
 #[derive(Debug, Clone)]
 pub enum LegendCommand {
     Text {
@@ -66,8 +69,10 @@ pub enum LegendCommand {
 }
 
 /// Legend renderer interface.
+///
+/// Produces a sequence of draw commands describing
+/// axes, ticks, labels, and metadata.
 pub trait LegendRenderer {
-    /// Generate legend drawing commands.
     fn generate(
         &self,
         settings: &LegendSettings,

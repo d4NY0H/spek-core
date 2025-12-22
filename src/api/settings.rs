@@ -67,10 +67,10 @@ pub struct SpectrogramSettings {
 #[derive(Debug, Clone)]
 pub struct RenderSettings {
     /// Output image width in pixels
-    pub width: u32,
+    pub width: usize,
 
     /// Output image height in pixels
-    pub height: u32,
+    pub height: usize,
 }
 
 /// Complete spek-core configuration.

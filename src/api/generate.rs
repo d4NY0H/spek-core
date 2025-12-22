@@ -14,7 +14,6 @@ use crate::analysis::{Analyzer, AnalysisSettings, IntensityScale, WindowFunction
 use crate::audio::AudioSource;
 use crate::render::{RenderSettings as CoreRenderSettings, Renderer};
 use crate::legend::LegendRenderer;
-use crate::color::ColorMapper;
 
 /// Generate a spectrogram image including legend.
 ///
@@ -25,7 +24,6 @@ pub fn generate_spectrogram(
     source: &dyn AudioSource,
     analyzer: &dyn Analyzer,
     renderer: &dyn Renderer,
-    color_mapper: &dyn ColorMapper,
     legend: &dyn LegendRenderer,
     settings: &SpekSettings,
 ) -> Result<SpectrogramResult, GenerateError> {
@@ -66,7 +64,7 @@ pub fn generate_spectrogram(
     };
 
     let mut image = renderer
-        .render(&spectrograms, &render_settings, color_mapper)
+        .render(&spectrograms, &render_settings)
         .map_err(|_| GenerateError::RenderFailed)?;
 
     // ---------------------------------------------------------------------

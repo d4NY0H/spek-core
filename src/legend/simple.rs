@@ -48,12 +48,18 @@ impl LegendRenderer for SimpleLegendRenderer {
 
         let header_y = top.saturating_sub(settings.font_size + 8);
 
+        let file_name = context
+            .file_name
+            .as_deref()
+            .unwrap_or("Unknown file");
+
+        let app_version = context
+            .app_version
+            .as_deref()
+            .unwrap_or("");
+
         // File name (left)
-        cmds.push(text(
-            left,
-            header_y,
-            &context.file_name,
-        ));
+        cmds.push(text(left, header_y, file_name));
 
         // Audio info (center)
         let channel_str = match context.audio.channels {
@@ -82,11 +88,13 @@ impl LegendRenderer for SimpleLegendRenderer {
         ));
 
         // App version (right)
-        cmds.push(text(
-            right.saturating_sub(120),
-            header_y,
-            &context.app_version,
-        ));
+        if !app_version.is_empty() {
+            cmds.push(text(
+                right.saturating_sub(140),
+                header_y,
+                app_version,
+            ));
+        }
 
         // -----------------------------------------------------------------
         // Axis lines

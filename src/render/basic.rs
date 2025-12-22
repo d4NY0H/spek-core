@@ -35,11 +35,7 @@ impl<'a> Renderer for BasicRenderer<'a> {
             return Err(RenderError::Failed);
         }
 
-        let channels = match settings.channels {
-            ChannelLayout::Combined => 1,
-            ChannelLayout::Split => spectrograms.channels.len(),
-        };
-
+        let channel_count = spectrograms.channels.len();
         let spec = &spectrograms.channels[0];
         let freq_bins = spec.freq_bins;
         let time_bins = spec.time_bins;
@@ -48,35 +44,45 @@ impl<'a> Renderer for BasicRenderer<'a> {
 
         for y in 0..settings.height {
             for x in 0..settings.width {
-                let (time_idx, freq_idx) = match settings.orientation {
-                    Orientation::Vertical => {
-                        let t = x * time_bins / settings.width;
-                        let f = (settings.height - 1 - y) * freq_bins / settings.height;
-                        (t, f)
+                let (time_idx, freq_idx, channel_idx) = match settings.channels {
+                    ChannelLayout::Combined => {
+                        let (t, f) = match settings.orientation {
+                            Orientation::Vertical => {
+                                let t = x * time_bins / settings.width;
+                                let f = (settings.height - 1 - y) * freq_bins / settings.height;
+                                (t, f)
+                            }
+                            Orientation::Horizontal => {
+                                let t = y * time_bins / settings.height;
+                                let f = (settings.width - 1 - x) * freq_bins / settings.width;
+                                (t, f)
+                            }
+                        };
+                        (t, f, None)
                     }
-                    Orientation::Horizontal => {
-                        let t = y * time_bins / settings.height;
-                        let f = (settings.width - 1 - x) * freq_bins / settings.width;
-                        (t, f)
+
+                    ChannelLayout::Split => {
+                        let ch_height = settings.height / channel_count;
+                        let ch = (y / ch_height).min(channel_count - 1);
+                        let local_y = y % ch_height;
+
+                        let t = x * time_bins / settings.width;
+                        let f = (ch_height - 1 - local_y) * freq_bins / ch_height;
+
+                        (t, f, Some(ch))
                     }
                 };
 
-                let mut intensity = 0.0;
-
-                match settings.channels {
-                    ChannelLayout::Combined => {
+                let intensity = match channel_idx {
+                    None => {
+                        let mut sum = 0.0;
                         for ch in &spectrograms.channels {
-                            intensity += ch.data[freq_idx][time_idx];
+                            sum += ch.data[freq_idx][time_idx];
                         }
-                        intensity /= spectrograms.channels.len() as f32;
+                        sum / spectrograms.channels.len() as f32
                     }
-                    ChannelLayout::Split => {
-                        let ch_height = settings.height / channels;
-                        let ch_index = y / ch_height;
-                        let ch_index = ch_index.min(spectrograms.channels.len() - 1);
-                        intensity = spectrograms.channels[ch_index].data[freq_idx][time_idx];
-                    }
-                }
+                    Some(ch) => spectrograms.channels[ch].data[freq_idx][time_idx],
+                };
 
                 let Rgba { r, g, b, a } = self.color_mapper.map(intensity);
                 let idx = (y * settings.width + x) * 4;

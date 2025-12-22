@@ -5,6 +5,8 @@
 
 use crate::analysis::SpectrogramSet;
 
+pub mod basic;
+
 /// Orientation of the spectrogram.
 #[derive(Debug, Copy, Clone)]
 pub enum Orientation {

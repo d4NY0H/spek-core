@@ -93,6 +93,12 @@ pub fn generate_spectrogram(
         image.height as u32,
     );
 
+    // Apply legend commands onto the rendered image
+    crate::legend::overlay::apply_legend_overlay(
+        &mut image,
+        &legend_commands,
+    );
+
     // NOTE:
     // Applying legend commands to the pixel buffer
     // will be implemented in the legend module.

@@ -17,10 +17,10 @@ pub mod result;
 
 use crate::audio::AudioSource;
 
-use crate::analysis::fft::FftAnalyzer;
-use crate::color::spek::SpekColorMapper;
+use crate::analysis::FftAnalyzer;
 use crate::render::basic::BasicRenderer;
 use crate::legend::simple::SimpleLegendRenderer;
+use crate::color::spek::SpekColorMapper;
 
 use generate::GenerateError;
 use settings::{SpectrogramSettings, SpekSettings};
@@ -69,7 +69,6 @@ pub fn generate_spectrogram(
         source,
         &analyzer,
         &renderer,
-        &color_mapper,
         &legend,
         &spek_settings,
     )

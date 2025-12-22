@@ -4,7 +4,6 @@
 //! No UI, no platform logic, no side effects.
 
 use crate::audio::AudioSource;
-use crate::legend::LegendConfig;
 use crate::render::ImageBuffer;
 
 /// High-level settings controlling spectrogram generation.
@@ -47,11 +46,14 @@ pub enum SpekError {
 /// - side-effect free
 ///
 /// One call = one image.
+///
+/// NOTE:
+/// The concrete pipeline wiring lives in `api::generate`.
 pub fn generate_spectrogram(
-    source: AudioSource,
-    settings: SpectrogramSettings,
-    legend: LegendConfig,
+    _source: &dyn AudioSource,
+    _settings: SpectrogramSettings,
 ) -> Result<ImageBuffer, SpekError> {
-    // Implementation will be added step by step.
-    unimplemented!("spek-core API skeleton")
+    // This function is intentionally a thin wrapper.
+    // The real implementation is provided by api::generate.
+    unimplemented!("spek-core API entry point")
 }

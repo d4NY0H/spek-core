@@ -30,14 +30,16 @@ impl AudioSource for DummyAudioSource {
     fn load(&self) -> Result<AudioBuffer, spek_core::audio::AudioError> {
         let sample_rate = 44100;
         let seconds = 2;
+
         let samples = vec![0.0f32; sample_rate * seconds];
+        let total_samples = samples.len() as u64;
 
         Ok(AudioBuffer {
             samples,
             meta: AudioMetadata {
                 sample_rate: sample_rate as u32,
                 channels: 1,
-                total_samples: samples.len() as u64,
+                total_samples,
                 bit_depth: None,
             },
         })

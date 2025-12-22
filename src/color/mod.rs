@@ -3,6 +3,8 @@
 //! Maps normalized intensity values (0.0–1.0) to RGBA colors.
 //! This module has NO knowledge of time, frequency, or legends.
 
+pub mod spek;
+
 /// RGBA color (8-bit per channel).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Rgba {

@@ -1,7 +1,7 @@
 //! Color mapping for spek-core.
 //!
 //! Maps normalized intensity values (0.0–1.0) to RGBA colors.
-//! This module has no knowledge of time, frequency, or legends.
+//! This module has NO knowledge of time, frequency, or legends.
 
 /// RGBA color (8-bit per channel).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -13,6 +13,9 @@ pub struct Rgba {
 }
 
 /// Supported color palettes.
+///
+/// These are perceptually ordered palettes suitable
+/// for spectrogram visualization.
 #[derive(Debug, Copy, Clone)]
 pub enum Palette {
     Grayscale,
@@ -28,18 +31,20 @@ pub struct ColorSettings {
     /// Selected color palette
     pub palette: Palette,
 
-    /// Global saturation multiplier
+    /// Global saturation multiplier (1.0 = neutral)
     pub saturation: f32,
 
-    /// Optional inversion
+    /// Invert intensity before mapping
     pub invert: bool,
 }
 
 /// Color mapper interface.
+///
+/// Implementations must be pure and deterministic.
 pub trait ColorMapper {
     /// Map normalized intensity to RGBA.
     ///
-    /// Input is expected to be in range 0.0–1.0.
+    /// Input intensity is expected to be in range 0.0–1.0.
     fn map(&self, intensity: f32) -> Rgba;
 }
 

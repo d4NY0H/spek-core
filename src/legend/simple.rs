@@ -13,9 +13,9 @@ use crate::legend::{
 ///
 /// Produces:
 /// - Optional file / metadata header (top)
-/// - Time axis (bottom)
+/// - Time axis (bottom) + "Time" label
 /// - Frequency axis (left)
-/// - dBFS scale (right)
+/// - dBFS scale (right) + "dBFS" label
 ///
 /// All output is deterministic and resolution-independent.
 pub struct SimpleLegendRenderer;
@@ -38,22 +38,22 @@ impl LegendRenderer for SimpleLegendRenderer {
         let mut cmds = Vec::new();
 
         let left = margins.left;
-        let right = image_width.saturating_sub(margins.right);
+        let right = image_width - margins.right;
         let top = margins.top;
-        let bottom = image_height.saturating_sub(margins.bottom);
+        let bottom = image_height - margins.bottom;
 
         // -----------------------------------------------------------------
-        // Header (top metadata) – OPTIONAL, Spek-style
+        // Header (top metadata) – OPTIONAL
         // -----------------------------------------------------------------
 
-        let header_y = top.saturating_sub(settings.font_size + 10);
+        let header_y = top.saturating_sub(settings.font_size + 8);
 
-        // File name (left)
+        // File name (left) – only if provided
         if let Some(file_name) = &context.file_name {
             cmds.push(text(left, header_y, file_name));
         }
 
-        // Audio info (slightly left of center, Spek-style)
+        // Audio info (center) – always present
         let channel_str = match context.audio.channels {
             1 => "Mono".to_string(),
             2 => "Stereo".to_string(),
@@ -73,17 +73,16 @@ impl LegendRenderer for SimpleLegendRenderer {
             bit_depth_str
         );
 
-        let center_x = left + (right - left) / 2;
         cmds.push(text(
-            center_x.saturating_sub(60),
+            (left + right) / 2 - 80,
             header_y,
             &audio_info,
         ));
 
-        // App version (right, subtle)
+        // App version (right) – only if provided
         if let Some(app_version) = &context.app_version {
             cmds.push(text(
-                right.saturating_sub(100),
+                right.saturating_sub(140),
                 header_y,
                 app_version,
             ));
@@ -97,7 +96,7 @@ impl LegendRenderer for SimpleLegendRenderer {
         cmds.push(line(right, top, right, bottom));     // dB axis
 
         // -----------------------------------------------------------------
-        // Time axis labels
+        // Time axis ticks + labels
         // -----------------------------------------------------------------
         for i in 0..=settings.time_ticks {
             let t = i as f64 / settings.time_ticks as f64;
@@ -106,11 +105,18 @@ impl LegendRenderer for SimpleLegendRenderer {
 
             cmds.push(line(x, bottom, x, bottom + 6));
             cmds.push(text(
-                x.saturating_sub(16),
+                x.saturating_sub(14),
                 bottom + 10,
                 &format!("{:.1}s", seconds),
             ));
         }
+
+        // X-axis title: "Time"
+        cmds.push(text(
+            (left + right) / 2 - 18,
+            bottom + 28,
+            "Time",
+        ));
 
         // -----------------------------------------------------------------
         // Frequency axis labels (linear, Hz → kHz)
@@ -124,7 +130,7 @@ impl LegendRenderer for SimpleLegendRenderer {
 
             cmds.push(line(left - 6, y, left, y));
             cmds.push(text(
-                6,
+                4,
                 y.saturating_sub(settings.font_size / 2),
                 &format!("{:.1} kHz", hz / 1000.0),
             ));
@@ -142,11 +148,18 @@ impl LegendRenderer for SimpleLegendRenderer {
 
             cmds.push(line(right, y, right + 6, y));
             cmds.push(text(
-                right + 12,
+                right + 10,
                 y.saturating_sub(settings.font_size / 2),
-                &format!("{:.0} dB", db),
+                &format!("{:.0}", db),
             ));
         }
+
+        // dB axis title: "dBFS"
+        cmds.push(text(
+            right + 10,
+            bottom + 28,
+            "dBFS",
+        ));
 
         cmds
     }

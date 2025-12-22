@@ -82,6 +82,10 @@ pub fn generate_spectrogram(
             duration_sec: duration_seconds,
             min_db: settings.spectrogram.min_db,
             max_db: settings.spectrogram.max_db,
+
+            // NEW: optional semantic metadata
+            file_name: None,
+            app_version: Some("spek-core 0.1.0".to_string()),
         },
         crate::legend::LegendMargins {
             left: 80,

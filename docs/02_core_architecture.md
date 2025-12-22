@@ -29,7 +29,7 @@ Kein Modul kennt:
 ## 2. Überblick: Modulstruktur
 
 Die finale Core-Struktur besteht aus **maximal sechs Modulen**:
-
+```
 spek-core/ 
 ├── audio/ 
 ├── analysis/ 
@@ -37,7 +37,7 @@ spek-core/
 ├── render/ 
 ├── legend/ 
 └── api/
-
+```
 Jedes Modul hat **eine klar abgegrenzte Verantwortung**  
 und **keine zyklischen Abhängigkeiten**.
 

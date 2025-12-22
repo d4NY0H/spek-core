@@ -1,7 +1,8 @@
 //! Spectrogram rendering model for spek-core.
 //!
 //! Converts numerical spectrogram data into a pixel buffer.
-//! This module does NOT handle legends, text, fonts, or metadata overlays.
+//! This module defines ONLY the rendering interface and data types.
+//! It does NOT handle legends, text, fonts, or metadata overlays.
 
 use crate::analysis::SpectrogramSet;
 
@@ -61,7 +62,10 @@ pub struct ImageBuffer {
 ///
 /// Converts numerical spectrogram data into a raw pixel buffer.
 ///
-/// Color mapping is handled internally by the renderer implementation.
+/// Implementations:
+/// - own their color strategy
+/// - are deterministic
+/// - perform no allocations except the output buffer
 pub trait Renderer {
     fn render(
         &self,
@@ -78,28 +82,4 @@ pub enum RenderError {
 
     /// Internal rendering failure
     Failed,
-}
-
-/// Helper: write a single RGBA pixel into the buffer.
-#[inline]
-pub fn put_pixel(
-    image: &mut ImageBuffer,
-    x: usize,
-    y: usize,
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
-) {
-    if x >= image.width || y >= image.height {
-        return;
-    }
-
-    let idx = (y * image.width + x) * 4;
-    if idx + 3 < image.data.len() {
-        image.data[idx] = r;
-        image.data[idx + 1] = g;
-        image.data[idx + 2] = b;
-        image.data[idx + 3] = a;
-    }
 }

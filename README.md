@@ -1,4 +1,4 @@
- # spek-core
+# spek-core
 
 **spek-core** is a **headless, platform-agnostic Rust core** for generating
 **deterministic, high-quality audio spectrograms with a full legend**.
@@ -11,7 +11,7 @@ no UI, no windows, no event loop, no platform assumptions.
 ## What spek-core is
 
 - A **pure spectrogram computation core**
-- **Headless-first** and **deterministic**
+- **Headless-first** and **fully deterministic**
 - Produces **pixel-perfect, reproducible images**
 - Always renders a **complete legend** (time, frequency, dBFS)
 - Designed for **Linux, Android, and iPadOS**
@@ -27,31 +27,31 @@ no UI, no windows, no event loop, no platform assumptions.
 - ❌ No DAW plugin
 - ❌ No ffmpeg replacement
 
-`spek-core` is a **library**, not an app.
+`spek-core` is a **library**, not an application.
 
 ---
 
-## Design principles
+## Core design principles
 
 - **Audio in → data → image out**
 - **Legend is mandatory**
-- **No ffmpeg legend**
+- **No ffmpeg-generated legend**
 - **No UI logic**
 - **No platform-specific code**
-- **Same input + same settings = identical output**
+- **Same input + same settings = bit-identical output**
 
 ---
 
 ## Architecture overview
 
-`spek-core` is split into **small, clearly separated modules**:
+`spek-core` is structured into **small, strictly separated modules**:
 
-- `audio` – audio access & metadata
-- `analysis` – signal processing (FFT, scaling, dBFS)
-- `color` – intensity → color mapping
+- `audio` – audio access and metadata
+- `analysis` – signal processing (windowing, FFT, dBFS, scaling)
+- `color` – intensity-to-color mapping
 - `render` – pixel-level image construction
 - `legend` – axes, labels, scales, text rendering
-- `api` – stable public interface (CLI, JNI, C ABI)
+- `api` – stable public interface (CLI, C ABI, JNI)
 
 Each module has **one responsibility** and no hidden dependencies.
 
@@ -61,8 +61,8 @@ Each module has **one responsibility** and no hidden dependencies.
 
 `spek-core` produces:
 
-- A **numerical spectrogram grid** (internal)
-- A **final RGBA image buffer**
+- An internal **numerical spectrogram grid**
+- A final **RGBA image buffer**
 - Optional **PNG output**
 
 The legend (time, frequency, dBFS) is **always part of the output**.
@@ -80,10 +80,10 @@ The legend (time, frequency, dBFS) is **always part of the output**.
 
 ### Phase 2 – Android
 
-- Rust core via **C ABI**
+- Rust core exposed via **C ABI**
 - Thin JNI wrapper
 - Bitmap output
-- No Android-specific logic in core
+- No Android-specific logic in the core
 
 ### Phase 3 – iPadOS (optional)
 
@@ -98,15 +98,15 @@ The legend (time, frequency, dBFS) is **always part of the output**.
 `spek-core` is **not a fork** of `spek-rs`.
 
 - `spek-rs` is UI-centric and desktop-focused
-- `spek-core` is UI-less and platform-neutral
+- `spek-core` is UI-less, deterministic, and platform-neutral
 
-Some concepts are reused **selectively**, but the architecture is independent.
+Concepts are reused **selectively**, but the architecture is independent.
 
 ---
 
-## Project documents
+## Project documentation
 
-The full design is specified in six core documents:
+The complete design is specified in six core documents:
 
 - `docs/01_core_vision.md`
 - `docs/02_core_architecture.md`
@@ -115,7 +115,7 @@ The full design is specified in six core documents:
 - `docs/05_legend_system.md`
 - `docs/06_platform_strategy_and_roadmap.md`
 
-These documents define the project completely.
+These documents define the project fully and are considered authoritative.
 
 ---
 
@@ -123,7 +123,7 @@ These documents define the project completely.
 
 - Design: **Final**
 - Architecture: **Frozen**
-- Implementation: **Pending**
+- Implementation: **In progress**
 - First target: **Linux CLI**
 
 ---
@@ -131,4 +131,3 @@ These documents define the project completely.
 ## License
 
 (To be defined)
-

@@ -20,7 +20,23 @@ Die Pipeline erzeugt **keine Bilder**, sondern **reine Daten**.
 
 ## 2. Gesamtübersicht
 
-Audio Samples ↓ Channel Handling ↓ Windowing ↓ FFT ↓ Magnitude / Power ↓ dBFS Mapping ↓ Intensity Scaling ↓ Spectrogram Grid
+```
+Audio Samples
+↓
+Channel Handling
+↓
+Windowing
+↓
+FFT
+↓
+Magnitude / Power
+↓
+dBFS Mapping
+↓
+Intensity Scaling
+↓
+Spectrogram Grid
+```
 
 **Output-Form:**
 

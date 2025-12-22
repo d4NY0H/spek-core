@@ -3,7 +3,7 @@
 //! Converts numerical spectrogram data into a pixel buffer.
 //! This module does NOT handle legends, text, or fonts.
 
-use crate::analysis::Spectrogram;
+use crate::analysis::SpectrogramSet;
 
 /// Orientation of the spectrogram.
 #[derive(Debug, Copy, Clone)]
@@ -35,9 +35,9 @@ pub struct RenderSettings {
     pub channels: ChannelLayout,
 }
 
-/// RGBA pixel buffer.
+/// RGBA8 image buffer (row-major).
 ///
-/// Layout: row-major, 4 bytes per pixel.
+/// data.len() == width * height * 4
 #[derive(Debug)]
 pub struct ImageBuffer {
     pub width: usize,
@@ -47,12 +47,12 @@ pub struct ImageBuffer {
 
 /// Render interface.
 ///
-/// Converts spectrogram data into a pixel buffer.
+/// Converts numerical spectrogram data into a pixel buffer.
 /// Color mapping is handled elsewhere.
 pub trait Renderer {
     fn render(
         &self,
-        spectrogram: &Spectrogram,
+        spectrograms: &SpectrogramSet,
         settings: &RenderSettings,
     ) -> Result<ImageBuffer, RenderError>;
 }

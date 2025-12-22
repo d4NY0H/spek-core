@@ -7,12 +7,13 @@
 //!
 //! No UI logic, no platform-specific code.
 
-use crate::api::result::{ImageBuffer, SpectrogramResult};
+use crate::api::result::SpectrogramResult;
 use crate::api::settings::SpekSettings;
+
 use crate::analysis::{Analyzer, AnalysisSettings, IntensityScale, WindowFunction};
 use crate::audio::AudioSource;
-use crate::render::{RenderSettings as CoreRenderSettings, Renderer};
-use crate::legend::LegendRenderer;
+use crate::render::{RenderSettings as CoreRenderSettings, Renderer, ImageBuffer};
+use crate::legend::{LegendRenderer};
 
 /// Generate a spectrogram image including legend.
 ///
@@ -92,11 +93,7 @@ pub fn generate_spectrogram(
         image.height as u32,
     );
 
-    // Apply legend commands onto the rendered image
-    crate::legend::overlay::apply_legend_overlay(
-        &mut image,
-        &legend_commands,
-    );
+    crate::legend::overlay::apply_legend_overlay(&mut image, &legend_commands);
 
     // ---------------------------------------------------------------------
     // 6. Assemble result

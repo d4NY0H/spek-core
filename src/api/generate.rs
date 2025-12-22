@@ -96,14 +96,10 @@ pub fn generate_spectrogram(
     crate::legend::overlay::apply_legend_overlay(&mut image, &legend_commands);
 
     // ---------------------------------------------------------------------
-    // 6. Assemble result (API-level ImageBuffer)
+    // 6. Assemble result
     // ---------------------------------------------------------------------
     Ok(SpectrogramResult {
-        image: crate::api::result::ImageBuffer {
-            width: image.width as u32,
-            height: image.height as u32,
-            data: image.data,
-        },
+        image,
         duration_seconds,
         sample_rate: audio.meta.sample_rate,
         channels: audio.meta.channels as u32,

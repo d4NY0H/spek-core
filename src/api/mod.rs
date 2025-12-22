@@ -3,12 +3,23 @@
 //! This module defines the ONLY supported entry points into the core.
 //! No UI, no platform logic, no side effects.
 
-use crate::audio::AudioSource;
-use crate::render::ImageBuffer;
+// ---------------------------------------------------------------------
+// Submodules
+// ---------------------------------------------------------------------
 
-use crate::api::generate;
-use crate::api::settings::SpectrogramSettings;
-use crate::api::result::SpectrogramResult;
+pub mod generate;
+pub mod settings;
+pub mod result;
+
+// ---------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------
+
+use crate::audio::AudioSource;
+
+use generate::GenerateError;
+use settings::SpectrogramSettings;
+use result::SpectrogramResult;
 
 /// Errors returned by spek-core.
 ///
@@ -38,8 +49,8 @@ pub fn generate_spectrogram(
 ) -> Result<SpectrogramResult, SpekError> {
     generate::generate_spectrogram(source, settings)
         .map_err(|e| match e {
-            generate::GenerateError::DecodeFailed => SpekError::DecodeError,
-            generate::GenerateError::AnalysisFailed => SpekError::AnalysisError,
-            generate::GenerateError::RenderFailed => SpekError::RenderError,
+            GenerateError::DecodeFailed => SpekError::DecodeError,
+            GenerateError::AnalysisFailed => SpekError::AnalysisError,
+            GenerateError::RenderFailed => SpekError::RenderError,
         })
 }

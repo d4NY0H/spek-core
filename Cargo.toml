@@ -1,0 +1,23 @@
+[package]
+name = "spek-core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = "Headless, deterministic spectrogram core with mandatory legend rendering"
+repository = "https://github.com/<yourname>/spek-core"
+
+[lib]
+name = "spek_core"
+path = "src/lib.rs"
+
+[dependencies]
+# DSP / math
+# (FFT backend will be selected later)
+# rustfft = "6"
+
+# Image output (used by CLI only)
+image = { version = "0.24", optional = true }
+
+[features]
+default = []
+cli = ["image"]

@@ -6,29 +6,13 @@
 use crate::audio::AudioSource;
 use crate::render::ImageBuffer;
 
-/// High-level settings controlling spectrogram generation.
-///
-/// These settings are platform-agnostic and deterministic.
-#[derive(Debug, Clone)]
-pub struct SpectrogramSettings {
-    pub fft_size: usize,
-    pub hop_size: usize,
-    pub min_db: f32,
-    pub max_db: f32,
-    pub scale: IntensityScale,
-    pub split_channels: bool,
-}
-
-/// Intensity scaling applied after dBFS mapping.
-#[derive(Debug, Clone, Copy)]
-pub enum IntensityScale {
-    Linear,
-    Sqrt,
-    Cbrt,
-    Log,
-}
+use crate::api::generate;
+use crate::api::settings::SpectrogramSettings;
+use crate::api::result::SpectrogramResult;
 
 /// Errors returned by spek-core.
+///
+/// This type is intentionally small and stable.
 #[derive(Debug)]
 pub enum SpekError {
     InvalidInput,
@@ -47,13 +31,15 @@ pub enum SpekError {
 ///
 /// One call = one image.
 ///
-/// NOTE:
-/// The concrete pipeline wiring lives in `api::generate`.
+/// This is a thin wrapper around `api::generate::generate_spectrogram`.
 pub fn generate_spectrogram(
-    _source: &dyn AudioSource,
-    _settings: SpectrogramSettings,
-) -> Result<ImageBuffer, SpekError> {
-    // This function is intentionally a thin wrapper.
-    // The real implementation is provided by api::generate.
-    unimplemented!("spek-core API entry point")
+    source: &dyn AudioSource,
+    settings: &SpectrogramSettings,
+) -> Result<SpectrogramResult, SpekError> {
+    generate::generate_spectrogram(source, settings)
+        .map_err(|e| match e {
+            generate::GenerateError::DecodeFailed => SpekError::DecodeError,
+            generate::GenerateError::AnalysisFailed => SpekError::AnalysisError,
+            generate::GenerateError::RenderFailed => SpekError::RenderError,
+        })
 }

@@ -38,22 +38,22 @@ impl LegendRenderer for SimpleLegendRenderer {
         let mut cmds = Vec::new();
 
         let left = margins.left;
-        let right = image_width - margins.right;
+        let right = image_width.saturating_sub(margins.right);
         let top = margins.top;
-        let bottom = image_height - margins.bottom;
+        let bottom = image_height.saturating_sub(margins.bottom);
 
         // -----------------------------------------------------------------
-        // Header (top metadata) – OPTIONAL
+        // Header (top metadata) – OPTIONAL, Spek-style
         // -----------------------------------------------------------------
 
-        let header_y = top.saturating_sub(settings.font_size + 8);
+        let header_y = top.saturating_sub(settings.font_size + 10);
 
-        // File name (left) – only if provided
+        // File name (left)
         if let Some(file_name) = &context.file_name {
             cmds.push(text(left, header_y, file_name));
         }
 
-        // Audio info (center) – ALWAYS present
+        // Audio info (slightly left of center, Spek-style)
         let channel_str = match context.audio.channels {
             1 => "Mono".to_string(),
             2 => "Stereo".to_string(),
@@ -73,16 +73,17 @@ impl LegendRenderer for SimpleLegendRenderer {
             bit_depth_str
         );
 
+        let center_x = left + (right - left) / 2;
         cmds.push(text(
-            (left + right) / 2 - 80,
+            center_x.saturating_sub(60),
             header_y,
             &audio_info,
         ));
 
-        // App version (right) – only if provided
+        // App version (right, subtle)
         if let Some(app_version) = &context.app_version {
             cmds.push(text(
-                right.saturating_sub(140),
+                right.saturating_sub(100),
                 header_y,
                 app_version,
             ));
@@ -105,7 +106,7 @@ impl LegendRenderer for SimpleLegendRenderer {
 
             cmds.push(line(x, bottom, x, bottom + 6));
             cmds.push(text(
-                x.saturating_sub(14),
+                x.saturating_sub(16),
                 bottom + 10,
                 &format!("{:.1}s", seconds),
             ));
@@ -123,7 +124,7 @@ impl LegendRenderer for SimpleLegendRenderer {
 
             cmds.push(line(left - 6, y, left, y));
             cmds.push(text(
-                4,
+                6,
                 y.saturating_sub(settings.font_size / 2),
                 &format!("{:.1} kHz", hz / 1000.0),
             ));
@@ -141,7 +142,7 @@ impl LegendRenderer for SimpleLegendRenderer {
 
             cmds.push(line(right, y, right + 6, y));
             cmds.push(text(
-                right + 10,
+                right + 12,
                 y.saturating_sub(settings.font_size / 2),
                 &format!("{:.0} dB", db),
             ));

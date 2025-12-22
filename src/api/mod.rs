@@ -17,13 +17,13 @@ pub mod result;
 
 use crate::audio::AudioSource;
 
-use crate::analysis::FftAnalyzer;
+use crate::analysis::fft::FftAnalyzer;
 use crate::render::basic::BasicRenderer;
 use crate::legend::simple::SimpleLegendRenderer;
 use crate::color::spek::SpekColorMapper;
 
 use generate::GenerateError;
-use settings::{SpectrogramSettings, SpekSettings};
+use settings::{SpectrogramSettings, SpekSettings, RenderSettings};
 use result::SpectrogramResult;
 
 /// Errors returned by spek-core.
@@ -40,13 +40,6 @@ pub enum SpekError {
 
 /// Generate a spectrogram image with a mandatory legend.
 ///
-/// This function is:
-/// - deterministic
-/// - blocking
-/// - side-effect free
-///
-/// One call = one image.
-///
 /// This function wires the DEFAULT core components.
 pub fn generate_spectrogram(
     source: &dyn AudioSource,
@@ -60,9 +53,15 @@ pub fn generate_spectrogram(
     let renderer = BasicRenderer::new(&color_mapper);
     let legend = SimpleLegendRenderer::new();
 
+    // -----------------------------------------------------------------
+    // Build full internal settings
+    // -----------------------------------------------------------------
     let spek_settings = SpekSettings {
         spectrogram: settings.clone(),
-        render: settings.render.clone(),
+        render: RenderSettings {
+            width: 1024,
+            height: 512,
+        },
     };
 
     generate::generate_spectrogram(

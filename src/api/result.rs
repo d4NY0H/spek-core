@@ -1,30 +1,24 @@
 //! Output types for spek-core.
+//!
+//! This module defines the final, public result returned by the core.
+//! All data here is stable API surface.
 
-/// Raw RGBA image buffer.
-#[derive(Debug, Clone)]
-pub struct ImageBuffer {
-    /// Image width in pixels
-    pub width: u32,
-
-    /// Image height in pixels
-    pub height: u32,
-
-    /// RGBA pixel data (width * height * 4)
-    pub data: Vec<u8>,
-}
+use crate::render::ImageBuffer;
 
 /// Spectrogram generation result.
+///
+/// The image ALWAYS includes the legend.
 #[derive(Debug, Clone)]
 pub struct SpectrogramResult {
-    /// Final rendered image (including legend)
+    /// Final rendered RGBA image buffer (with legend)
     pub image: ImageBuffer,
 
     /// Duration of the input audio in seconds
     pub duration_seconds: f64,
 
-    /// Sample rate of the input audio
+    /// Sample rate of the input audio in Hz
     pub sample_rate: u32,
 
-    /// Number of channels in input audio
+    /// Number of channels in the input audio
     pub channels: u32,
 }

@@ -71,7 +71,7 @@ pub struct SpectrogramSet {
 pub trait Analyzer {
     fn analyze(
         &self,
-        audio: &crate::audio::AudioBuffer<'_>,
+        audio: &crate::audio::AudioBuffer,
         settings: &AnalysisSettings,
     ) -> Result<SpectrogramSet, AnalysisError>;
 }

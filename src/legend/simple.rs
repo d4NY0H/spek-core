@@ -12,10 +12,10 @@ use crate::legend::{
 /// Default legend renderer (Spek-style).
 ///
 /// Produces:
+/// - File / metadata header (top)
 /// - Time axis (bottom)
 /// - Frequency axis (left)
 /// - dBFS scale (right)
-/// - Title line (top)
 ///
 /// All output is deterministic and resolution-independent.
 pub struct SimpleLegendRenderer;
@@ -43,20 +43,57 @@ impl LegendRenderer for SimpleLegendRenderer {
         let bottom = image_height - margins.bottom;
 
         // -----------------------------------------------------------------
+        // Header (top metadata)
+        // -----------------------------------------------------------------
+
+        let header_y = top.saturating_sub(settings.font_size + 8);
+
+        // File name (left)
+        cmds.push(text(
+            left,
+            header_y,
+            &context.file_name,
+        ));
+
+        // Audio info (center)
+        let channel_str = match context.audio.channels {
+            1 => "Mono".to_string(),
+            2 => "Stereo".to_string(),
+            n => format!("{} ch", n),
+        };
+
+        let bit_depth_str = context
+            .audio
+            .bit_depth
+            .map(|b| format!("{}-bit", b))
+            .unwrap_or_else(|| "unknown bit".to_string());
+
+        let audio_info = format!(
+            "{} Hz · {} · {}",
+            context.audio.sample_rate,
+            channel_str,
+            bit_depth_str
+        );
+
+        cmds.push(text(
+            (left + right) / 2 - 80,
+            header_y,
+            &audio_info,
+        ));
+
+        // App version (right)
+        cmds.push(text(
+            right.saturating_sub(120),
+            header_y,
+            &context.app_version,
+        ));
+
+        // -----------------------------------------------------------------
         // Axis lines
         // -----------------------------------------------------------------
         cmds.push(line(left, top, left, bottom));       // Frequency axis
         cmds.push(line(left, bottom, right, bottom));   // Time axis
         cmds.push(line(right, top, right, bottom));     // dB axis
-
-        // -----------------------------------------------------------------
-        // Title (top)
-        // -----------------------------------------------------------------
-        cmds.push(text(
-            left,
-            top.saturating_sub(settings.font_size + 8),
-            "Spectrogram",
-        ));
 
         // -----------------------------------------------------------------
         // Time axis labels
@@ -68,7 +105,7 @@ impl LegendRenderer for SimpleLegendRenderer {
 
             cmds.push(line(x, bottom, x, bottom + 6));
             cmds.push(text(
-                x.saturating_sub(12),
+                x.saturating_sub(14),
                 bottom + 10,
                 &format!("{:.1}s", seconds),
             ));

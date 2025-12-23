@@ -7,6 +7,7 @@
 // Submodules
 // ---------------------------------------------------------------------
 
+pub mod image;
 pub mod generate;
 pub mod settings;
 pub mod result;

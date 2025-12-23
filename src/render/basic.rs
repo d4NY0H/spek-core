@@ -40,9 +40,13 @@ impl<'a> Renderer for BasicRenderer<'a> {
         let freq_bins = spec.freq_bins;
         let time_bins = spec.time_bins;
 
-        // IMPORTANT:
-        // Buffer starts fully black (RGBA = 0)
+        // -------------------------------------------------------------
+        // FIX: Initialize fully opaque black background (Spek behavior)
+        // -------------------------------------------------------------
         let mut buffer = vec![0u8; settings.width * settings.height * 4];
+        for i in (0..buffer.len()).step_by(4) {
+            buffer[i + 3] = 255; // alpha = opaque
+        }
 
         for y in 0..settings.height {
             for x in 0..settings.width {
@@ -101,8 +105,7 @@ impl<'a> Renderer for BasicRenderer<'a> {
                     Some(ch) => spectrograms.channels[ch].data[freq_idx][time_idx],
                 };
 
-                // CRITICAL FIX:
-                // Do NOT draw background / silence
+                // Silence = leave pixel black (but opaque)
                 if intensity <= 0.0 {
                     continue;
                 }
@@ -113,7 +116,7 @@ impl<'a> Renderer for BasicRenderer<'a> {
                 buffer[idx] = color.r;
                 buffer[idx + 1] = color.g;
                 buffer[idx + 2] = color.b;
-                buffer[idx + 3] = color.a;
+                buffer[idx + 3] = 255; // enforce opacity
             }
         }
 

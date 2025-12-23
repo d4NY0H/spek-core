@@ -1,19 +1,20 @@
 //! Public spectrogram generation API.
 //!
 //! This module defines the single, stable entry point into spek-core.
-//! It wires together the full pipeline:
 //!
-//! audio → analysis → render → legend → result
+//! spek-core follows the Spek / spek-rs model strictly:
+//! - ffmpeg renders the spectrogram image
+//! - spek-core only overlays legend information
 //!
-//! No UI logic, no platform-specific code.
+//! No DSP, no FFT, no color mapping happens here.
 
 use crate::api::result::SpectrogramResult;
 use crate::api::settings::SpekSettings;
 
-use crate::analysis::{Analyzer, AnalysisSettings, IntensityScale, WindowFunction};
-use crate::audio::AudioSource;
-use crate::render::{RenderSettings as CoreRenderSettings, Renderer};
-use crate::legend::{LegendRenderer, LegendContext, LegendSettings, LegendMargins};
+use crate::audio::{AudioSource, AudioError};
+use crate::legend::{
+    LegendRenderer, LegendContext, LegendSettings, LegendMargins,
+};
 
 /// Generate a spectrogram image including legend.
 ///
@@ -22,70 +23,39 @@ use crate::legend::{LegendRenderer, LegendContext, LegendSettings, LegendMargins
 /// One call → one deterministic result.
 pub fn generate_spectrogram(
     source: &dyn AudioSource,
-    analyzer: &dyn Analyzer,
-    renderer: &dyn Renderer,
     legend: &dyn LegendRenderer,
     settings: &SpekSettings,
 ) -> Result<SpectrogramResult, GenerateError> {
     // ---------------------------------------------------------------------
-    // 1. Load audio
+    // 1. Load spectrogram image + metadata from audio source
     // ---------------------------------------------------------------------
-    let audio = source.load().map_err(|_| GenerateError::DecodeFailed)?;
+    let source_result = source
+        .load()
+        .map_err(map_audio_error)?;
 
-    let duration_seconds =
-        audio.meta.total_samples as f64 / audio.meta.sample_rate as f64;
-
-    // ---------------------------------------------------------------------
-    // 2. Build analysis settings
-    // ---------------------------------------------------------------------
-    let analysis_settings = AnalysisSettings {
-        fft_size: settings.spectrogram.fft_size,
-        hop_size: settings.spectrogram.hop_size,
-        window: map_window(settings.spectrogram.window),
-        scale: map_scale(settings.spectrogram.scale),
-        min_db: settings.spectrogram.min_db,
-    };
+    let mut image = source_result.image;
+    let meta = source_result.meta;
 
     // ---------------------------------------------------------------------
-    // 3. Run signal analysis
-    // ---------------------------------------------------------------------
-    let spectrograms = analyzer
-        .analyze(&audio, &analysis_settings)
-        .map_err(|_| GenerateError::AnalysisFailed)?;
-
-    // ---------------------------------------------------------------------
-    // 4. Render spectrogram image (without legend)
-    // ---------------------------------------------------------------------
-    let render_settings = CoreRenderSettings {
-        width: settings.render.width,
-        height: settings.render.height,
-        orientation: crate::render::Orientation::Vertical,
-        channels: crate::render::ChannelLayout::Combined,
-    };
-
-    let mut image = renderer
-        .render(&spectrograms, &render_settings)
-        .map_err(|_| GenerateError::RenderFailed)?;
-
-    // ---------------------------------------------------------------------
-    // 5. Render legend overlay
+    // 2. Build legend context
     // ---------------------------------------------------------------------
     let legend_context = LegendContext {
-        audio: audio.meta.clone(),
-        duration_sec: duration_seconds,
+        audio: meta.clone(),
+        duration_sec: meta.duration_sec,
         min_db: settings.spectrogram.min_db,
         max_db: settings.spectrogram.max_db,
 
-        // Spek-style: optional, informational only
+        // Optional informational fields
         file_name: None,
-
-        // Deterministic core version
         app_version: Some(format!(
             "spek-core {}",
             env!("CARGO_PKG_VERSION")
         )),
     };
 
+    // ---------------------------------------------------------------------
+    // 3. Generate legend commands
+    // ---------------------------------------------------------------------
     let legend_commands = legend.generate(
         &LegendSettings {
             font_size: 14,
@@ -104,16 +74,22 @@ pub fn generate_spectrogram(
         image.height as u32,
     );
 
-    crate::legend::overlay::apply_legend_overlay(&mut image, &legend_commands);
+    // ---------------------------------------------------------------------
+    // 4. Apply legend overlay
+    // ---------------------------------------------------------------------
+    crate::legend::overlay::apply_legend_overlay(
+        &mut image,
+        &legend_commands,
+    );
 
     // ---------------------------------------------------------------------
-    // 6. Assemble result
+    // 5. Assemble result
     // ---------------------------------------------------------------------
     Ok(SpectrogramResult {
         image,
-        duration_seconds,
-        sample_rate: audio.meta.sample_rate,
-        channels: audio.meta.channels as u32,
+        duration_seconds: meta.duration_sec,
+        sample_rate: meta.sample_rate,
+        channels: meta.channels as u32,
     })
 }
 
@@ -121,26 +97,14 @@ pub fn generate_spectrogram(
 #[derive(Debug)]
 pub enum GenerateError {
     DecodeFailed,
-    AnalysisFailed,
-    RenderFailed,
 }
 
-/// Map public window enum to analysis window enum.
-fn map_window(w: crate::api::settings::WindowFunction) -> WindowFunction {
-    match w {
-        crate::api::settings::WindowFunction::Rectangular => WindowFunction::Rectangular,
-        crate::api::settings::WindowFunction::Hann => WindowFunction::Hann,
-        crate::api::settings::WindowFunction::Hamming => WindowFunction::Hamming,
-        crate::api::settings::WindowFunction::Blackman => WindowFunction::Blackman,
-    }
-}
-
-/// Map public scale enum to analysis scale enum.
-fn map_scale(s: crate::api::settings::ScaleMode) -> IntensityScale {
-    match s {
-        crate::api::settings::ScaleMode::Linear => IntensityScale::Linear,
-        crate::api::settings::ScaleMode::Sqrt => IntensityScale::Sqrt,
-        crate::api::settings::ScaleMode::Cbrt => IntensityScale::Cbrt,
-        crate::api::settings::ScaleMode::Log => IntensityScale::Log,
+/// Map backend audio errors to public API errors.
+fn map_audio_error(err: AudioError) -> GenerateError {
+    match err {
+        AudioError::UnsupportedFormat => GenerateError::DecodeFailed,
+        AudioError::DecodeFailed => GenerateError::DecodeFailed,
+        AudioError::IoError => GenerateError::DecodeFailed,
+        AudioError::Cancelled => GenerateError::DecodeFailed,
     }
 }

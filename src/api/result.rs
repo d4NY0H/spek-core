@@ -3,11 +3,12 @@
 //! This module defines the final, public result returned by the core.
 //! All data here is stable API surface.
 
-use crate::render::ImageBuffer;
+use crate::api::image::ImageBuffer;
 
 /// Spectrogram generation result.
 ///
 /// The image ALWAYS includes the legend.
+/// The image is already fully rendered and ready for export.
 #[derive(Debug, Clone)]
 pub struct SpectrogramResult {
     /// Final rendered RGBA image buffer (with legend)

@@ -161,8 +161,12 @@ fn power_to_db(power: f32, min_db: f32) -> f32 {
 }
 
 /// Normalize dBFS into 0.0–1.0.
+///
+/// Spek-style normalization:
+/// - min_db -> 0.0
+/// - 0 dBFS -> 1.0
 fn normalize_db(db: f32, min_db: f32) -> f32 {
-    ((db - min_db) / -min_db).clamp(0.0, 1.0)
+    ((db - min_db) / (0.0 - min_db)).clamp(0.0, 1.0)
 }
 
 /// Apply intensity scaling.
@@ -171,7 +175,13 @@ fn apply_scale(v: f32, scale: IntensityScale) -> f32 {
         IntensityScale::Linear => v,
         IntensityScale::Sqrt => v.sqrt(),
         IntensityScale::Cbrt => v.cbrt(),
-        IntensityScale::Log => (1.0 + 9.0 * v).log10(),
+
+        // Spek-like perceptual log scaling
+        IntensityScale::Log => {
+            // Boost low-level energy so it becomes visible
+            (v * 1000.0 + 1.0).log10() / 3.0
+        }
+
         IntensityScale::Power(p) => v.powf(p),
     }
 }

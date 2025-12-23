@@ -14,7 +14,7 @@ use crate::legend::{
 /// Produces:
 /// - Optional file / metadata header (top)
 /// - Time axis (bottom) with labels + top ticks without labels
-/// - Frequency axis (left)
+/// - Frequency axis (left + right ticks, labels left only)
 /// - dBFS scale (right)
 ///
 /// All output is deterministic and resolution-independent.
@@ -88,9 +88,9 @@ impl LegendRenderer for SimpleLegendRenderer {
         // -----------------------------------------------------------------
         // Axis lines
         // -----------------------------------------------------------------
-        cmds.push(line(left, top, left, bottom));       // Frequency axis
+        cmds.push(line(left, top, left, bottom));       // Frequency axis (left)
         cmds.push(line(left, bottom, right, bottom));   // Time axis
-        cmds.push(line(right, top, right, bottom));     // dB axis
+        cmds.push(line(right, top, right, bottom));     // dB axis / right frame
 
         // -----------------------------------------------------------------
         // Time axis ticks
@@ -104,10 +104,10 @@ impl LegendRenderer for SimpleLegendRenderer {
             // Bottom ticks
             cmds.push(line(x, bottom, x, bottom + 6));
 
-            // Top ticks (no labels)
+            // Top ticks
             cmds.push(line(x, top.saturating_sub(6), x, top));
 
-            // Bottom labels only
+            // Bottom labels
             let total_seconds = context.duration_sec * t;
             let minutes = (total_seconds / 60.0).floor() as u64;
             let seconds = (total_seconds % 60.0).floor() as u64;
@@ -127,7 +127,9 @@ impl LegendRenderer for SimpleLegendRenderer {
         ));
 
         // -----------------------------------------------------------------
-        // Frequency axis labels (linear, Hz → kHz)
+        // Frequency axis (linear, Hz → kHz)
+        //  - labels LEFT
+        //  - ticks LEFT + RIGHT (mirrored)
         // -----------------------------------------------------------------
         let nyquist = context.audio.sample_rate as f64 / 2.0;
 
@@ -136,7 +138,13 @@ impl LegendRenderer for SimpleLegendRenderer {
             let y = bottom - ((bottom - top) as f64 * f) as u32;
             let hz = nyquist * f;
 
+            // Left ticks
             cmds.push(line(left - 6, y, left, y));
+
+            // Right ticks (mirrored)
+            cmds.push(line(right, y, right + 6, y));
+
+            // Labels only on the left
             cmds.push(text(
                 4,
                 y.saturating_sub(settings.font_size / 2),

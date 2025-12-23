@@ -174,31 +174,19 @@ impl LegendRenderer for SimpleLegendRenderer {
         }
 
         // -----------------------------------------------------------------
-        // dBFS gradient (semantic, backend-agnostic)
+        // dBFS gradient (semantic command)
         //
-        // Represented as a dense set of horizontal lines.
-        // Coloring is handled later by the renderer.
+        // NO heuristics
+        // NO fake lines
+        // EXACTLY one semantic gradient
         // -----------------------------------------------------------------
-        let gradient_width: u32 = 10;
-        let gradient_x_start = right + 20;
+        let gradient_x = right + 34;
 
-        let gradient_height = bottom - top;
-        let steps = gradient_height.max(1);
-
-        for i in 0..=steps {
-            let y = top + i;
-
-            // Semantic dB position (not rendered here)
-            let _db_value = context.max_db
-                + (context.min_db - context.max_db) * (i as f32 / steps as f32);
-
-            cmds.push(line(
-                gradient_x_start,
-                y,
-                gradient_x_start + gradient_width,
-                y,
-            ));
-        }
+        cmds.push(LegendCommand::DbfsGradient {
+            x: gradient_x,
+            y_top: top,
+            y_bottom: bottom,
+        });
 
         // -----------------------------------------------------------------
         // dBFS scale ticks + labels

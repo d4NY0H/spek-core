@@ -13,9 +13,9 @@ use crate::legend::{
 ///
 /// Produces:
 /// - Optional file / metadata header (top)
-/// - Time axis (bottom) + "Time" label
+/// - Time axis (bottom) with labels + top ticks without labels
 /// - Frequency axis (left)
-/// - dBFS scale (right) + "dBFS" label
+/// - dBFS scale (right)
 ///
 /// All output is deterministic and resolution-independent.
 pub struct SimpleLegendRenderer;
@@ -93,17 +93,25 @@ impl LegendRenderer for SimpleLegendRenderer {
         cmds.push(line(right, top, right, bottom));     // dB axis
 
         // -----------------------------------------------------------------
-        // Time axis ticks + labels (m:ss)
+        // Time axis ticks
+        //  - bottom: ticks + labels
+        //  - top: ticks only (no labels)
         // -----------------------------------------------------------------
         for i in 0..=settings.time_ticks {
             let t = i as f64 / settings.time_ticks as f64;
             let x = left + ((right - left) as f64 * t) as u32;
 
+            // Bottom ticks
+            cmds.push(line(x, bottom, x, bottom + 6));
+
+            // Top ticks (no labels)
+            cmds.push(line(x, top.saturating_sub(6), x, top));
+
+            // Bottom labels only
             let total_seconds = context.duration_sec * t;
             let minutes = (total_seconds / 60.0).floor() as u64;
             let seconds = (total_seconds % 60.0).floor() as u64;
 
-            cmds.push(line(x, bottom, x, bottom + 6));
             cmds.push(text(
                 x.saturating_sub(14),
                 bottom + 10,
@@ -154,6 +162,7 @@ impl LegendRenderer for SimpleLegendRenderer {
             ));
         }
 
+        // dB axis title
         cmds.push(text(
             right + 10,
             bottom + 28,

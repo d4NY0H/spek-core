@@ -9,7 +9,6 @@ pub mod audio;
 pub mod analysis;
 pub mod render;
 pub mod legend;
-pub mod color;
 
 // Re-export public API
 pub use api::*;

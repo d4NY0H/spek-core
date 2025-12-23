@@ -1,10 +1,20 @@
 //! Audio input abstraction for spek-core.
 //!
-//! This module defines the platform-agnostic audio interface.
-//! It does NOT decode audio, perform DSP, or depend on ffmpeg
-//! or any specific backend.
+//! In spek-core, "audio" means:
+//! - invoking an external backend (ffmpeg)
+//! - obtaining a rendered spectrogram image
+//! - collecting minimal audio metadata
+//!
+//! spek-core does NOT decode PCM,
+//! does NOT perform FFT,
+//! and does NOT do DSP of any kind.
 
-/// Audio metadata required by the signal pipeline.
+use crate::render::ImageBuffer;
+
+/// Audio metadata required for legend rendering.
+///
+/// This metadata is informational only and
+/// mirrors what Spek / spek-rs exposes.
 #[derive(Debug, Clone)]
 pub struct AudioMetadata {
     /// Sample rate in Hz (e.g. 44100)
@@ -13,48 +23,52 @@ pub struct AudioMetadata {
     /// Number of channels (1 = mono, 2 = stereo, ...)
     pub channels: u16,
 
-    /// Total number of samples per channel
-    pub total_samples: u64,
+    /// Total duration in seconds
+    pub duration_sec: f64,
 
     /// Bit depth of the original source, if known
     pub bit_depth: Option<u16>,
 }
 
-/// PCM audio buffer in normalized floating-point format.
+/// Result of an audio source invocation.
 ///
-/// All samples must be in the range [-1.0, 1.0].
-/// Samples are interleaved: L, R, L, R, ...
+/// This is the ONLY data spek-core needs
+/// from an audio backend.
 #[derive(Debug)]
-pub struct AudioBuffer {
-    /// Interleaved PCM samples
-    pub samples: Vec<f32>,
+pub struct SpectrogramSource {
+    /// Rendered spectrogram image (RGBA, opaque)
+    pub image: ImageBuffer,
 
-    /// Associated metadata
+    /// Audio metadata for legend / UI
     pub meta: AudioMetadata,
 }
 
 /// Abstract audio source.
 ///
-/// This trait will later be implemented by:
-/// - ffmpeg-based loaders (Linux)
-/// - JNI bridges (Android)
-/// - Swift / C ABI bridges (iPadOS)
+/// Implementations:
+/// - ffmpeg CLI backend (Linux, Colab)
+/// - later: platform-specific wrappers
 ///
-/// spek-core only depends on THIS interface.
+/// IMPORTANT:
+/// Implementations MUST render the spectrogram themselves.
+/// spek-core never touches PCM or FFT data.
 pub trait AudioSource {
-    /// Load the entire audio stream into memory.
-    ///
-    /// The returned buffer must be complete and immutable.
-    fn load(&self) -> Result<AudioBuffer, AudioError>;
+    /// Generate a spectrogram image and metadata.
+    fn load(&self) -> Result<SpectrogramSource, AudioError>;
 }
 
-/// Audio loading errors.
-///
-/// This is intentionally small and backend-agnostic.
+/// Audio loading / rendering errors.
 #[derive(Debug)]
 pub enum AudioError {
+    /// Input format not supported by backend
     UnsupportedFormat,
+
+    /// ffmpeg or backend failed
     DecodeFailed,
+
+    /// I/O failure
     IoError,
+
+    /// Operation cancelled by caller
     Cancelled,
 }

@@ -91,16 +91,32 @@ pub struct LegendContext {
 /// rendered by any text / vector backend.
 #[derive(Debug, Clone)]
 pub enum LegendCommand {
+    /// Draw text at pixel position.
     Text {
         x: u32,
         y: u32,
         content: String,
     },
+
+    /// Draw a straight line.
     Line {
         x1: u32,
         y1: u32,
         x2: u32,
         y2: u32,
+    },
+
+    /// Draw a vertical dBFS gradient bar (Spek-style).
+    ///
+    /// This is semantically NOT a line.
+    /// It represents a continuous color scale from max → min dBFS.
+    ///
+    /// - `y_top` corresponds to max dBFS (bright)
+    /// - `y_bottom` corresponds to min dBFS (dark)
+    DbfsGradient {
+        x: u32,
+        y_top: u32,
+        y_bottom: u32,
     },
 }
 

@@ -66,12 +66,16 @@ impl AudioSource for FfmpegAudioSource {
             .ok_or(AudioError::DecodeFailed)?;
 
         // -------------------------------------------------------------
-        // 2. Decode audio to f32 PCM via ffmpeg
+        // 2. Decode audio to f32 PCM via ffmpeg (MINIMAL + SAFE)
         // -------------------------------------------------------------
         let decode = Command::new("ffmpeg")
             .args([
+                "-nostdin",
                 "-v",
                 "error",
+                "-vn",
+                "-sn",
+                "-dn",
                 "-i",
             ])
             .arg(&self.path)
@@ -94,17 +98,27 @@ impl AudioSource for FfmpegAudioSource {
         }
 
         // -------------------------------------------------------------
-        // 3. Convert raw bytes → f32 samples
+        // 3. Convert raw bytes → f32 samples (CLAMPED)
         // -------------------------------------------------------------
         let bytes = decode.stdout;
         if bytes.len() % 4 != 0 {
             return Err(AudioError::DecodeFailed);
         }
 
-        let samples: Vec<f32> = bytes
-            .chunks_exact(4)
-            .map(|b| f32::from_le_bytes([b[0], b[1], b[2], b[3]]))
-            .collect();
+        let mut samples: Vec<f32> = Vec::with_capacity(bytes.len() / 4);
+
+        for chunk in bytes.chunks_exact(4) {
+            let mut v = f32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
+
+            // Critical safety:
+            if !v.is_finite() {
+                v = 0.0;
+            } else {
+                v = v.clamp(-1.0, 1.0);
+            }
+
+            samples.push(v);
+        }
 
         let total_samples = (samples.len() / channels as usize) as u64;
 
@@ -119,6 +133,7 @@ impl AudioSource for FfmpegAudioSource {
         };
 
         Ok(AudioBuffer {
+            // Intentional leak: AudioBuffer is immutable & lives for program lifetime
             samples: Box::leak(samples.into_boxed_slice()),
             meta,
         })

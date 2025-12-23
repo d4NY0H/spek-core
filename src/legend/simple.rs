@@ -94,6 +94,11 @@ impl LegendRenderer for SimpleLegendRenderer {
 
         // -----------------------------------------------------------------
         // Time axis (top ticks + bottom labels)
+        //
+        // IMPORTANT:
+        // Spek-compatible time format is strictly `m:ss`.
+        // Minutes are NOT capped at 59 (e.g. "124:32" is valid).
+        // This is intentional and must not be changed.
         // -----------------------------------------------------------------
         for i in 0..=settings.time_ticks {
             let t = i as f64 / settings.time_ticks as f64;
@@ -102,14 +107,11 @@ impl LegendRenderer for SimpleLegendRenderer {
             cmds.push(line(x, bottom, x, bottom + 6));
             cmds.push(line(x, top.saturating_sub(6), x, top));
 
-            let total = context.duration_sec * t;
-            let minutes = (total / 60.0).floor() as u64;
-            let seconds = (total % 60.0).floor() as u64;
-
+            let total_seconds = context.duration_sec * t;
             cmds.push(text(
                 x.saturating_sub(14),
                 bottom + 10,
-                &format!("{}:{:02}", minutes, seconds),
+                &format_time_m_ss(total_seconds),
             ));
         }
 
@@ -141,7 +143,6 @@ impl LegendRenderer for SimpleLegendRenderer {
             for i in 0..=ticks {
                 let f = i as f64 / ticks as f64;
 
-                // Exact alignment:
                 // 0 kHz at bottom, Nyquist at top
                 let y = ch_bottom.saturating_sub(
                     ((channel_height as f64) * f).round() as u32,
@@ -202,6 +203,15 @@ impl LegendRenderer for SimpleLegendRenderer {
 // -------------------------------------------------------------------------
 // Helpers
 // -------------------------------------------------------------------------
+
+/// Format time exactly like Spek / spek-rs:
+/// `m:ss` with minutes NOT capped at 59.
+#[inline]
+fn format_time_m_ss(total_seconds: f64) -> String {
+    let minutes = (total_seconds / 60.0).floor() as u64;
+    let seconds = (total_seconds % 60.0).floor() as u64;
+    format!("{}:{:02}", minutes, seconds)
+}
 
 #[inline]
 fn line(x1: u32, y1: u32, x2: u32, y2: u32) -> LegendCommand {

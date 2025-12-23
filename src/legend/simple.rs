@@ -48,12 +48,10 @@ impl LegendRenderer for SimpleLegendRenderer {
 
         let header_y = top.saturating_sub(settings.font_size + 8);
 
-        // File name (left) – only if provided
         if let Some(file_name) = &context.file_name {
             cmds.push(text(left, header_y, file_name));
         }
 
-        // Audio info (center) – always present
         let channel_str = match context.audio.channels {
             1 => "Mono".to_string(),
             2 => "Stereo".to_string(),
@@ -79,7 +77,6 @@ impl LegendRenderer for SimpleLegendRenderer {
             &audio_info,
         ));
 
-        // App version (right) – only if provided
         if let Some(app_version) = &context.app_version {
             cmds.push(text(
                 right.saturating_sub(140),
@@ -96,22 +93,25 @@ impl LegendRenderer for SimpleLegendRenderer {
         cmds.push(line(right, top, right, bottom));     // dB axis
 
         // -----------------------------------------------------------------
-        // Time axis ticks + labels
+        // Time axis ticks + labels (m:ss)
         // -----------------------------------------------------------------
         for i in 0..=settings.time_ticks {
             let t = i as f64 / settings.time_ticks as f64;
             let x = left + ((right - left) as f64 * t) as u32;
-            let seconds = context.duration_sec * t;
+
+            let total_seconds = context.duration_sec * t;
+            let minutes = (total_seconds / 60.0).floor() as u64;
+            let seconds = (total_seconds % 60.0).floor() as u64;
 
             cmds.push(line(x, bottom, x, bottom + 6));
             cmds.push(text(
                 x.saturating_sub(14),
                 bottom + 10,
-                &format!("{:.1}s", seconds),
+                &format!("{}:{:02}", minutes, seconds),
             ));
         }
 
-        // X-axis title: "Time"
+        // X-axis title
         cmds.push(text(
             (left + right) / 2 - 18,
             bottom + 28,
@@ -154,7 +154,6 @@ impl LegendRenderer for SimpleLegendRenderer {
             ));
         }
 
-        // dB axis title: "dBFS"
         cmds.push(text(
             right + 10,
             bottom + 28,

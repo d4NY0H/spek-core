@@ -16,6 +16,7 @@ use crate::legend::{
 /// - Time axis (bottom) with labels + top ticks without labels
 /// - Frequency axis (left + right ticks, labels left only)
 /// - dBFS scale (right)
+/// - Correct multi-channel split handling
 ///
 /// All output is deterministic and resolution-independent.
 pub struct SimpleLegendRenderer;
@@ -43,9 +44,8 @@ impl LegendRenderer for SimpleLegendRenderer {
         let bottom = image_height - margins.bottom;
 
         // -----------------------------------------------------------------
-        // Header (top metadata) – OPTIONAL
+        // Header (optional)
         // -----------------------------------------------------------------
-
         let header_y = top.saturating_sub(settings.font_size + 8);
 
         if let Some(file_name) = &context.file_name {
@@ -86,31 +86,25 @@ impl LegendRenderer for SimpleLegendRenderer {
         }
 
         // -----------------------------------------------------------------
-        // Axis lines
+        // Axis frames
         // -----------------------------------------------------------------
-        cmds.push(line(left, top, left, bottom));       // Frequency axis (left)
-        cmds.push(line(left, bottom, right, bottom));   // Time axis
-        cmds.push(line(right, top, right, bottom));     // dB axis / right frame
+        cmds.push(line(left, top, left, bottom));
+        cmds.push(line(left, bottom, right, bottom));
+        cmds.push(line(right, top, right, bottom));
 
         // -----------------------------------------------------------------
-        // Time axis ticks
-        //  - bottom: ticks + labels
-        //  - top: ticks only (no labels)
+        // Time axis (top ticks + bottom labels)
         // -----------------------------------------------------------------
         for i in 0..=settings.time_ticks {
             let t = i as f64 / settings.time_ticks as f64;
             let x = left + ((right - left) as f64 * t) as u32;
 
-            // Bottom ticks
             cmds.push(line(x, bottom, x, bottom + 6));
-
-            // Top ticks
             cmds.push(line(x, top.saturating_sub(6), x, top));
 
-            // Bottom labels
-            let total_seconds = context.duration_sec * t;
-            let minutes = (total_seconds / 60.0).floor() as u64;
-            let seconds = (total_seconds % 60.0).floor() as u64;
+            let total = context.duration_sec * t;
+            let minutes = (total / 60.0).floor() as u64;
+            let seconds = (total % 60.0).floor() as u64;
 
             cmds.push(text(
                 x.saturating_sub(14),
@@ -119,7 +113,6 @@ impl LegendRenderer for SimpleLegendRenderer {
             ));
         }
 
-        // X-axis title
         cmds.push(text(
             (left + right) / 2 - 18,
             bottom + 28,
@@ -127,33 +120,59 @@ impl LegendRenderer for SimpleLegendRenderer {
         ));
 
         // -----------------------------------------------------------------
-        // Frequency axis (linear, Hz → kHz)
-        //  - labels LEFT
-        //  - ticks LEFT + RIGHT (mirrored)
+        // Frequency axis (Spek-accurate)
         // -----------------------------------------------------------------
         let nyquist = context.audio.sample_rate as f64 / 2.0;
 
-        for i in 0..=settings.freq_ticks {
-            let f = i as f64 / settings.freq_ticks as f64;
-            let y = bottom - ((bottom - top) as f64 * f) as u32;
-            let hz = nyquist * f;
+        let height = bottom - top;
+        let max_ticks = settings.freq_ticks.max(2);
+        let tick_step = (height / max_ticks as u32).max(24);
 
-            // Left ticks
-            cmds.push(line(left - 6, y, left, y));
+        let split_channels = context.audio.channels > 1;
+        let channel_count = if split_channels { 2 } else { 1 };
+        let channel_height = height / channel_count;
 
-            // Right ticks (mirrored)
-            cmds.push(line(right, y, right + 6, y));
+        for ch in 0..channel_count {
+            let ch_top = top + ch * channel_height;
+            let ch_bottom = ch_top + channel_height;
 
-            // Labels only on the left
-            cmds.push(text(
-                4,
-                y.saturating_sub(settings.font_size / 2),
-                &format!("{:.1} kHz", hz / 1000.0),
-            ));
+            let ticks = (channel_height / tick_step).max(2);
+
+            for i in 0..=ticks {
+                let f = i as f64 / ticks as f64;
+
+                // Exact alignment:
+                // 0 kHz at bottom, Nyquist at top
+                let y = ch_bottom.saturating_sub(
+                    ((channel_height as f64) * f).round() as u32,
+                );
+
+                let freq = nyquist * f;
+
+                // Skip Nyquist label on lower channel (Spek behavior)
+                if split_channels && ch == 1 && i == ticks {
+                    continue;
+                }
+
+                cmds.push(line(left - 6, y, left, y));
+                cmds.push(line(right, y, right + 6, y));
+
+                let label = if (freq % 1000.0).abs() < 1.0 {
+                    format!("{:.0} kHz", freq / 1000.0)
+                } else {
+                    format!("{:.1} kHz", freq / 1000.0)
+                };
+
+                cmds.push(text(
+                    4,
+                    y.saturating_sub(settings.font_size / 2),
+                    &label,
+                ));
+            }
         }
 
         // -----------------------------------------------------------------
-        // dBFS scale (right)
+        // dBFS scale
         // -----------------------------------------------------------------
         let db_range = context.max_db - context.min_db;
 
@@ -170,7 +189,6 @@ impl LegendRenderer for SimpleLegendRenderer {
             ));
         }
 
-        // dB axis title
         cmds.push(text(
             right + 10,
             bottom + 28,

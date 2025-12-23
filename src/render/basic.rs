@@ -40,6 +40,8 @@ impl<'a> Renderer for BasicRenderer<'a> {
         let freq_bins = spec.freq_bins;
         let time_bins = spec.time_bins;
 
+        // IMPORTANT:
+        // Buffer starts fully black (RGBA = 0)
         let mut buffer = vec![0u8; settings.width * settings.height * 4];
 
         for y in 0..settings.height {
@@ -98,6 +100,12 @@ impl<'a> Renderer for BasicRenderer<'a> {
                     }
                     Some(ch) => spectrograms.channels[ch].data[freq_idx][time_idx],
                 };
+
+                // CRITICAL FIX:
+                // Do NOT draw background / silence
+                if intensity <= 0.0 {
+                    continue;
+                }
 
                 let color = self.color_mapper.map(intensity);
                 let idx = (y * settings.width + x) * 4;

@@ -47,6 +47,9 @@ impl Analyzer for FftAnalyzer {
 
         let mut result = Vec::with_capacity(channels);
 
+        // Spek-style visual noise cutoff
+        const SPEK_CUTOFF: f32 = 0.005;
+
         for ch in 0..channels {
             let mut spec = Spectrogram {
                 freq_bins,
@@ -72,7 +75,15 @@ impl Analyzer for FftAnalyzer {
                     let db = power_to_db(power, settings.min_db);
                     let norm = normalize_db(db, settings.min_db);
                     let scaled = apply_scale(norm, settings.scale);
-                    spec.data[f][t] = scaled;
+
+                    // -------------------------------------------------
+                    // CRITICAL: Spek-style hard cutoff
+                    // -------------------------------------------------
+                    spec.data[f][t] = if scaled < SPEK_CUTOFF {
+                        0.0
+                    } else {
+                        scaled
+                    };
                 }
             }
 
@@ -100,15 +111,11 @@ fn build_window(kind: WindowFunction, size: usize) -> Vec<f32> {
                     + 0.08 * (4.0 * PI * i as f32 / size as f32).cos()
             })
             .collect(),
-        _ => vec![1.0; size], // fallback
+        _ => vec![1.0; size],
     }
 }
 
 /// In-place radix-2 FFT (Cooley–Tukey).
-///
-/// NOTE:
-/// This is a minimal reference implementation.
-/// It will be replaced by a faster FFT backend later.
 fn fft_inplace(re: &mut [f32], im: &mut [f32]) {
     let n = re.len();
     let mut j = 0;
@@ -161,10 +168,6 @@ fn power_to_db(power: f32, min_db: f32) -> f32 {
 }
 
 /// Normalize dBFS into 0.0–1.0.
-///
-/// Spek-style normalization:
-/// - min_db -> 0.0
-/// - 0 dBFS -> 1.0
 fn normalize_db(db: f32, min_db: f32) -> f32 {
     ((db - min_db) / (0.0 - min_db)).clamp(0.0, 1.0)
 }
@@ -175,13 +178,7 @@ fn apply_scale(v: f32, scale: IntensityScale) -> f32 {
         IntensityScale::Linear => v,
         IntensityScale::Sqrt => v.sqrt(),
         IntensityScale::Cbrt => v.cbrt(),
-
-        // Spek-like perceptual log scaling
-        IntensityScale::Log => {
-            // Boost low-level energy so it becomes visible
-            (v * 1000.0 + 1.0).log10() / 3.0
-        }
-
+        IntensityScale::Log => (v * 1000.0 + 1.0).log10() / 3.0,
         IntensityScale::Power(p) => v.powf(p),
     }
 }
